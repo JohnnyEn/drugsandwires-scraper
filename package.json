@@ -1,0 +1,19 @@
+{
+  "name": "drugsandwires-scraper",
+  "version": "1.0.0",
+  "description": "A simple Node.js tool for scraping Drugs and wires webcomic",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "private"
+  ],
+  "author": "johnnyAtomsk",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3",
+    "html-miner": "^1.2.5"
+  }
+}
