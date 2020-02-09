@@ -4,7 +4,8 @@
   "description": "A simple Node.js tool for scraping Drugs and wires webcomic",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scrape": "node index"
   },
   "keywords": [
     "private"
@@ -12,8 +13,10 @@
   "author": "johnnyAtomsk",
   "license": "UNLICENSED",
   "dependencies": {
+    "async": "^3.1.1",
     "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
-    "html-miner": "^1.2.5"
+    "progress": "^2.0.3",
+    "request": "^2.88.0"
   }
 }

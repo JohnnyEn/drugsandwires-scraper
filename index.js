@@ -1,17 +1,22 @@
 const cheerio = require('cheerio');
 const https = require('https');
+const request = require('request')
+const async = require('async')
+const ProgressBar = require('progress')
 const fs = require('fs');
 const dawContentsPage = 'https://www.drugsandwires.fail/contents/';
 
 let contentsRaw;
 let chaptersUrl = [];
+let lastPagesArray = [];
 let uniqueLastPagesArray = [];
 let uniqueChaptersArray = [];
-let uniqueImagesUrlArray = [];
-let urlForDownload = [];
+let downloadIterator = 0;
 
-let getHtmlCode = function(url) {
-  contentsRaw = null;
+let getHtmlCode = function(url, persistent = false) {
+  if (!persistent) {
+    contentsRaw = null;
+  }
 
   return new Promise(function(resolve, reject) {
     https.get(url, function(res) {
@@ -30,102 +35,167 @@ let getHtmlCode = function(url) {
   });
 };
 
-let getChaptersUrl = function() {
-  let chaptersLinks = cheerio('a', contentsRaw);
-  for (i = 0; i < chaptersLinks.length; i++) {
-    if (!chaptersLinks[i].attribs.href.includes('storyline') || chaptersLinks[i].attribs.href.includes('extras') || chaptersLinks[i].attribs.href.includes('wirepedia')) {
-      continue;
-    }
+let getChapterUrl = function() {
+  getHtmlCode(dawContentsPage)
+    .then(() => {
+        let chaptersLinks = cheerio('a', contentsRaw);
+        for (let i = 0, length = chaptersLinks.length; i < length; i++) {
+          if (
+            !chaptersLinks[i].attribs.href.includes('storyline') ||
+            chaptersLinks[i].attribs.href.includes('extras') ||
+            chaptersLinks[i].attribs.href.includes('wirepedia')
+          ) {
+            continue;
+          }
 
-    if (chaptersLinks[i].attribs.href.includes('http:')) {
-      chaptersUrl.push(chaptersLinks[i].attribs.href.replace('http:', 'https:'))
-      continue;
-    }
+          if (chaptersLinks[i].attribs.href.includes('http:')) {
+            chaptersUrl.push(chaptersLinks[i].attribs.href.replace('http:', 'https:'))
+            continue;
+          }
 
-    chaptersUrl.push(chaptersLinks[i].attribs.href);
-  }
-
-  getChaptersUrls();
+          chaptersUrl.push(chaptersLinks[i].attribs.href);
+          console.log('Parsing contents page');
+        }
+    })
+    .finally(() => {
+      console.log('Parsing complete');
+      getChaptersLinks();
+    })
 };
 
-let getChaptersUrls = function() {
-  let lastPagesArray = [];
+let getChaptersLinks = function() {
+  let pageNumbers;
 
-  for (i = 0; i < chaptersUrl.length; i++) {
+  for (let i = 0, length = chaptersUrl.length; i < length; i++) {
+    console.log('Generating URL');
     getHtmlCode(chaptersUrl[i])
       .then(() => {
-        let pageNumbers = cheerio('a.next.page-numbers', contentsRaw).prev();
+        pageNumbers = cheerio('a.next.page-numbers', contentsRaw).prev();
 
-        for (i = 0; i < pageNumbers.length; i++) {
+        for (let i = 0, length = pageNumbers.length; i < length; i++) {
           lastPagesArray.push(pageNumbers[i].attribs.href);
         }
-
-        uniqueLastPagesArray = [... new Set(lastPagesArray)];
       })
       .finally(() => {
-        if (i === chaptersUrl.length) {
-          makeChapterUrls()
-            .then(() => {
-              sortChaptersArray();
-              getImagesUrls();
-              downloadImages();
-          })
+        if (i === length - 1) {
+          // cheerio.js is fucking bullshit!!!
+          setTimeout(function() {
+            console.log('Generating URL complete');
+            makeChapterUrls();
+          }, 100)
         }
       })
-
-    if (i === chaptersUrl.length) {
-      return;
-    }
   }
 };
 
 let makeChapterUrls = function() {
-  return new Promise((resolve) => {
-    uniqueLastPagesArray.forEach((item) => {
-      let lastChapter = item.slice(-3).replace(/\D+/g, '');
-      let baseChapterUrl = item.substring(0, item.length - 3);
+  uniqueLastPagesArray = [... new Set(lastPagesArray)];
 
-      for (i = lastChapter; i > 0; i--) {
-        uniqueChaptersArray.push(baseChapterUrl + '/' + i + '/')
+  if (!uniqueLastPagesArray.length === 6) {
+    console.log('Parsing has failed, try again!');
+    return;
+  }
+
+  console.log(['Number of parsed chapters: ', uniqueLastPagesArray.length]);
+  console.log(uniqueLastPagesArray);
+
+  for (let i = 0, length = uniqueLastPagesArray.length; i < length; i++) {
+    let item = uniqueLastPagesArray[i];
+    let lastChapter = item.slice(-3).replace(/\D+/g, '');
+    let baseChapterUrl = item.substring(0, item.length - 3);
+
+    for (let item = lastChapter; item > 2; item--) {
+      if (item === 1) {
+        uniqueChaptersArray.push(baseChapterUrl + '/');
       }
-    });
 
-    resolve();
-  })
-};
+      uniqueChaptersArray.push(baseChapterUrl + '/' + item + '/');
+    }
 
-let sortChaptersArray = function() {
-  uniqueChaptersArray.reverse();
-};
-
-let getImagesUrls = function() {
-  let iterator = 0;
-
-  uniqueChaptersArray.forEach((item, index) => {
-    getHtmlCode(item)
-      .then(() => {
-        iterator++;
-        let imageUrl = cheerio('img.attachment-full', contentsRaw)
-
-        for (i = 0; i < imageUrl.length; i++) {
-          uniqueImagesUrlArray.push(imageUrl[i].attribs.src);
-        }
-
-        if (iterator === index) {
-          urlForDownload = [... new Set(uniqueImagesUrlArray)]
-          urlForDownload.array.forEach(item => {
-
-          });
-        }
-      })
-  })
+    if (i === length - 1) {
+      downloadImages();
+    }
+  }
 };
 
 let downloadImages = function() {
-  console.log(urlForDownload);
+  uniqueChaptersArray.reverse();
+  let downloadArray = [];
+
+  for (let i = 0, length = uniqueChaptersArray.length; i < length; i++) {
+    getHtmlCode(uniqueChaptersArray[i], true)
+      .then(() => {
+        let imageUrl = cheerio('.attachment-full', contentsRaw);
+
+        for (let itx = 0, len = imageUrl.length; itx < len; itx++) {
+          downloadArray.push(imageUrl[itx].attribs.src)
+        }
+
+        if (i === length - 1) {
+          let sortedLinks = [... new Set(downloadArray.sort())];
+          console.log('Started downloading! -> Total number of items' + sortedLinks.length);
+          console.log('Waiting for actual pages list');
+          setTimeout(function() {
+            console.log('Actual pages list complete!');
+            dl.downloadFiles(sortedLinks);
+          }, 5000)
+        }
+      })
+  }
 };
 
-getHtmlCode(dawContentsPage)
-  .then(() => {
-    getChaptersUrl();
-  })
+class Downloader {
+  constructor() {
+    this.q = async.queue(this.singleFile, 1);
+
+    this.q.drain(function() {
+      console.log('all items have been processed');
+    });
+
+    this.q.error(function(err, task) {
+      console.error('task experienced an error', task);
+    });
+  }
+
+  downloadFiles(links) {
+    console.log(links.length);
+
+    for (let link of links) {
+      if (links.length === downloadIterator) {
+        return;
+      }
+
+      this.q.push(link);
+    }
+  }
+
+  singleFile(link, cb) {
+    downloadIterator++;
+    let file = request(link);
+    let bar;
+    let path = file.uri.pathname.replace('/wp-content/uploads/', '');
+    let name = path.replace(/\//g, '-');
+
+    file.on('response', (res) => {
+      const len = parseInt(res.headers['content-length'], 10);
+      bar = new ProgressBar('  Downloading [:bar] :rate/bps :percent :etas', {
+        complete: '=',
+        incomplete: ' ',
+        width: 20,
+        total: len
+      });
+      file.on('data', (chunk) => {
+        bar.tick(chunk.length);
+      })
+      file.on('end', () => {
+        console.log('\n' + 'Downloaded index: ' + downloadIterator + '\n');
+        cb();
+      })
+    })
+    file.pipe(fs.createWriteStream('./images/' + name))
+  }
+}
+
+const dl = new Downloader();
+
+getChapterUrl();
