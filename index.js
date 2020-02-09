@@ -1,8 +1,8 @@
 const cheerio = require('cheerio');
 const https = require('https');
-const request = require('request')
-const async = require('async')
-const ProgressBar = require('progress')
+const request = require('request');
+const async = require('async');
+const ProgressBar = require('progress');
 const fs = require('fs');
 const dawContentsPage = 'https://www.drugsandwires.fail/contents/';
 
@@ -32,7 +32,7 @@ let getHtmlCode = function(url, persistent = false) {
       console.log('Error:' + e.message);
       reject();
     });
-  });
+  })
 };
 
 let getChapterUrl = function() {
@@ -81,9 +81,9 @@ let getChaptersLinks = function() {
           setTimeout(function() {
             console.log('Generating URL complete');
             makeChapterUrls();
-          }, 100)
+          }, 100);
         }
-      })
+      });
   }
 };
 
@@ -128,7 +128,7 @@ let downloadImages = function() {
         let imageUrl = cheerio('.attachment-full', contentsRaw);
 
         for (let itx = 0, len = imageUrl.length; itx < len; itx++) {
-          downloadArray.push(imageUrl[itx].attribs.src)
+          downloadArray.push(imageUrl[itx].attribs.src);
         }
 
         if (i === length - 1) {
@@ -188,7 +188,7 @@ class Downloader {
         cb();
       })
     })
-    file.pipe(fs.createWriteStream('./images/' + name))
+    file.pipe(fs.createWriteStream('./images/' + name));
   }
 }
 
