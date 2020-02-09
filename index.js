@@ -38,24 +38,24 @@ let getHtmlCode = function(url, persistent = false) {
 let getChapterUrl = function() {
   getHtmlCode(dawContentsPage)
     .then(() => {
-        let chaptersLinks = cheerio('a', contentsRaw);
-        for (let i = 0, length = chaptersLinks.length; i < length; i++) {
-          if (
-            !chaptersLinks[i].attribs.href.includes('storyline') ||
-            chaptersLinks[i].attribs.href.includes('extras') ||
-            chaptersLinks[i].attribs.href.includes('wirepedia')
-          ) {
-            continue;
-          }
-
-          if (chaptersLinks[i].attribs.href.includes('http:')) {
-            chaptersUrl.push(chaptersLinks[i].attribs.href.replace('http:', 'https:'))
-            continue;
-          }
-
-          chaptersUrl.push(chaptersLinks[i].attribs.href);
-          console.log('Parsing contents page');
+      let chaptersLinks = cheerio('a', contentsRaw);
+      for (let i = 0, length = chaptersLinks.length; i < length; i++) {
+        if (
+          !chaptersLinks[i].attribs.href.includes('storyline') ||
+          chaptersLinks[i].attribs.href.includes('extras') ||
+          chaptersLinks[i].attribs.href.includes('wirepedia')
+        ) {
+          continue;
         }
+
+        if (chaptersLinks[i].attribs.href.includes('http:')) {
+          chaptersUrl.push(chaptersLinks[i].attribs.href.replace('http:', 'https:'))
+          continue;
+        }
+
+        chaptersUrl.push(chaptersLinks[i].attribs.href);
+        console.log('Parsing contents page');
+      }
     })
     .finally(() => {
       console.log('Parsing complete');
