@@ -97,16 +97,16 @@ let makeChapterUrls = function() {
   }
 
   console.log(['Number of parsed chapters: ', uniqueLastPagesArray.length]);
-  console.log(uniqueLastPagesArray);
 
   for (let i = 0, length = uniqueLastPagesArray.length; i < length; i++) {
     let item = uniqueLastPagesArray[i];
     let lastChapter = item.slice(-3).replace(/\D+/g, '');
     let baseChapterUrl = item.substring(0, item.length - 3);
 
-    for (let item = lastChapter; item > 2; item--) {
-      if (item === 1) {
-        uniqueChaptersArray.push(baseChapterUrl + '/');
+    for (let item = lastChapter; item > 0; item--) {
+      if (item == 1) {
+        uniqueChaptersArray.push(baseChapterUrl.replace('/page/', '/'));
+        continue;
       }
 
       uniqueChaptersArray.push(baseChapterUrl + '/' + item + '/');
@@ -120,6 +120,7 @@ let makeChapterUrls = function() {
 
 let downloadImages = function() {
   uniqueChaptersArray.reverse();
+  // console.log([uniqueChaptersArray, uniqueChaptersArray.length]);
   let downloadArray = [];
 
   for (let i = 0, length = uniqueChaptersArray.length; i < length; i++) {
@@ -161,10 +162,6 @@ class Downloader {
     console.log(links.length);
 
     for (let link of links) {
-      if (links.length === downloadIterator) {
-        return;
-      }
-
       this.q.push(link);
     }
   }
