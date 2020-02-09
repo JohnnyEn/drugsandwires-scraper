@@ -78,7 +78,6 @@ let getChaptersLinks = function() {
       })
       .finally(() => {
         if (i === length - 1) {
-          // cheerio.js is fucking bullshit!!!
           setTimeout(function() {
             console.log('Generating URL complete');
             makeChapterUrls();
@@ -96,7 +95,7 @@ let makeChapterUrls = function() {
     return;
   }
 
-  console.log(['Number of parsed chapters: ', uniqueLastPagesArray.length]);
+  console.log('Number of parsed chapters: ', uniqueLastPagesArray.length);
 
   for (let i = 0, length = uniqueLastPagesArray.length; i < length; i++) {
     let item = uniqueLastPagesArray[i];
@@ -120,7 +119,7 @@ let makeChapterUrls = function() {
 
 let downloadImages = function() {
   uniqueChaptersArray.reverse();
-  // console.log([uniqueChaptersArray, uniqueChaptersArray.length]);
+  console.log(['List of links to be downloaded: ', uniqueChaptersArray, 'Totaling: ' + uniqueChaptersArray.length]);
   let downloadArray = [];
 
   for (let i = 0, length = uniqueChaptersArray.length; i < length; i++) {
@@ -134,7 +133,7 @@ let downloadImages = function() {
 
         if (i === length - 1) {
           let sortedLinks = [... new Set(downloadArray.sort())];
-          console.log('Started downloading! -> Total number of items' + sortedLinks.length);
+          console.log('Started downloading! -> Total number of items: ' + sortedLinks.length);
           console.log('Waiting for actual pages list');
           setTimeout(function() {
             console.log('Actual pages list complete!');
